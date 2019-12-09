@@ -67,6 +67,28 @@ char equalStates(struct State s1, struct State s2)
     return areEqual;
 }
 
+//looks if the head if the same as the edge given for parameter
+//if not looks in the tail.
+//if tail == NULL then, return 0.
+char listHasEdge(struct Edge head, struct Edge search)
+{
+    if(head.destinationState == search.destinationState)
+    {
+        if(head.direction == search.direction)
+        {
+            if(head.piece == head.piece)
+            {
+                return 1;
+            }
+        }
+    }
+
+    if(head.tail == NULL)
+        return 0;
+
+    return listHasEdge(*head.tail, search);
+}
+
 //adds an state to the array and adds one to its size
 void addState(struct State state)
 {
@@ -194,8 +216,79 @@ unsigned char move(unsigned char direction, char piece, struct State currentStat
                 hash = 0;
             }
         }
-    }
 
+        
+        
+        //Is was able to do move
+        if(hash)
+        {
+
+            //new State to save the information
+            struct State newState;
+
+            //saves the information in the new state
+            for(int i = 0; i < 20; i++)
+            {
+                newState.board[i] = board[i / 4][i % 4];
+            }
+
+            //Verifies the array of states to see if the new state is 
+            //already there
+            unsigned char equal = 0;
+
+            //saves newState locatio if found in the array
+            unsigned char newStateLocation = 0;
+            //saves currentState location in the array
+            unsigned char currentStateLocation = 0;
+            for(; newStateLocation < statesSize && equal;)
+            {
+                equal = equalStates(states[i], newState);
+                if(!equal)
+                    newStateLocation++;
+
+                if(equalStates(states[i], currentState))
+                    currentStateLocation = newStateLocation;    
+            }
+
+            //Edge from currentState to newState
+            struct Edge currentEdge;
+            currentEdge.direction = direction;
+            currentEdge.piece = piece;
+            currentEdge.destinationState = newStateLocation;
+
+            //Edge from newState to currentState
+            struct Edge newEdge;
+
+            //Inverts the direction to place it in newEdge
+            if(direction == UP || direction == LEFT)
+                newEdge.direction = direction + 64;
+            else if(direction == DOWN || direction == RIGHT)
+                newEdge.direction = direction - 64;
+
+            newEdge.piece = piece;
+            newEdge.destinationState = currentStateLocation;
+
+            //Didnt found the state in the array
+            if(!equal)
+            {
+                //add the new state and its edge
+                //can asume that there was no edge to the new state 
+                addState(newState);
+                addHead(newEdge);
+
+                addEdgeToList(heads[currentStateLocation], currentEdge);
+            }else
+            {
+                //if found need to see if the edge was already created
+                if(!listHasEdge(heads[newStateLocation], newEdge))
+                {
+                    //adds the edges to both sides
+                    addEdgeToList(heads[newStateLocation], newEdge);
+                    addEdgeToList(heads[currentStateLocation], currentEdge);
+                }
+            }
+        }
+    }
     return hash;
 }
 
